@@ -8,15 +8,23 @@ live-web 的本地联调环境与测试脚本，独立成一个 git 仓库管理
 ## 起环境
 
 ```bash
-bash live-test/reset.sh          # 清库、重建 玩家1/2/3、重启 chat_server(:8765)
-python3 deploy/serve.py          # 另开一个终端：静态页 (:8000)
+bash live-test/reset.sh          # 清库、重建 玩家1/2/3、只重启 chat_server(:8765)
+bash live-test/restart_all.sh    # 一键重启全部三个服务 chat(:8765)/web(:8000)/auth(:8001)
+python3 deploy/serve.py          # 只想要静态页时，另开一个终端（:8000）
 ```
 
 浏览器打开 <http://localhost:8000/game.html>，用 `玩家1 / test123456` 登录
 （测试账号固定：玩家1、玩家2、玩家3，密码都是 `test123456`）。
 
-`reset.sh` 会先 `pkill -9 -f chat_server.py`，因为残留的旧进程会占着 8765
-端口或改到别的库，观察到的一切都会失真。
+两者的分工：**需要干净数据用 `reset.sh`**（会清库）；
+**改了后端代码用 `restart_all.sh`** —— 它不动任何数据，把三个服务一起用新代码重启。
+端口按项目自己的规则解析（环境变量 > `config.json` > 默认值），所以改了 `config.json`
+里的端口这里也跟着变；就绪检测是连 `127.0.0.1:<端口>`，因此只适用于监听回环的服务
+（默认的 chat/web 绑 `0.0.0.0`、auth 绑 `127.0.0.1`，都满足）。
+
+两个脚本都会先 `pkill -9` 残留进程（含沙箱自动重启的幽灵进程），因为旧进程会占着
+端口或继续跑改动前的代码，观察到的一切都会失真；`restart_all.sh` 清完还会确认端口
+真的空出来，否则新进程绑不上、就绪检测会被旧进程骗过去。
 
 ## 自动化测试
 
