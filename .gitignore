@@ -1,0 +1,10 @@
+# 运行时产物：测试数据库、日志、调试输出，都不进版本库
+
+users.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+*.out
+__pycache__/
+*.py[cod]
