@@ -59,6 +59,9 @@ class Joiner:
                     await self.send({"type": "poker_action", "action": "claim", "kind": "gang"})
                 elif claim.get("peng"):
                     await self.send({"type": "poker_action", "action": "claim", "kind": "peng"})
+                elif claim.get("chi"):
+                    await self.send({"type": "poker_action", "action": "claim",
+                                     "kind": "chi", "tiles": claim["chi"][0]})
                 else:
                     await self.send({"type": "poker_action", "action": "pass"})
                 return

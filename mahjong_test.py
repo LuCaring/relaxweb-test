@@ -90,7 +90,9 @@ class Bot:
                       f"{'荒庄' if data.get('draw_game') else '作废'}", flush=True)
         elif t == "room_closed":
             print(f"[bot] {self.user} room closed: {data.get('reason')}", flush=True)
-            self.closed.set()
+            # 开局前房主的防御性退房也会收到这条消息，别当成自己的房间关了
+            if self.joined.is_set():
+                self.closed.set()
         elif t == "game_update":
             view = data
             self.last_view = view
@@ -123,6 +125,11 @@ class Bot:
                 elif claim.get("peng"):
                     await self.send({"type": "poker_action", "action": "claim",
                                      "kind": "peng"})
+                    self.claimed += 1
+                elif claim.get("chi"):
+                    pair = claim["chi"][0]
+                    await self.send({"type": "poker_action", "action": "claim",
+                                     "kind": "chi", "tiles": pair})
                     self.claimed += 1
                 else:
                     await self.send({"type": "poker_action", "action": "pass"})
@@ -223,7 +230,9 @@ check("四人加入且规则回显", len(first.get("players") or []) == 4
       str(first.get("rules")))
 check("开局视图含圈风与庄家", first.get("round_wind") == "东" and first.get("dealer"),
       f"{first.get('round_wind')} / {first.get('dealer')}")
-check("各家正常摸牌（手牌 13/14 张）", all(b.max_hand in (13, 14) for b in bots),
+# 吃碰后暗牌会减少，因此只要求「看到过接近满手」且庄家首轮 14 张
+check("各家正常摸牌（庄家 14 张，其余 ≥10 张）",
+      bots[0].max_hand == 14 and all(b.max_hand >= 10 for b in bots),
       str([(b.user, b.max_hand) for b in bots]))
 check("两手全部产生结果", len(host.hand_results) >= MAX_HANDS,
       f"{len(host.hand_results)} hands")
